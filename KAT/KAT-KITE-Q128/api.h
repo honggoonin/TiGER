@@ -1,0 +1,15 @@
+#ifndef api_h
+#define api_h
+
+#include "params.h"
+
+#define CRYPTO_SECRETKEYBYTES SECRETKEYSIZE
+#define CRYPTO_PUBLICKEYBYTES PUBLICKEYSIZE
+#define CRYPTO_BYTES MESSAGE_LEN
+#define CRYPTO_CIPHERTEXTBYTES CIPHERTEXTSIZE
+
+#define CRYPTO_ALGNAME "KITE-Q"
+
+
+
+#endif /* api_h */
