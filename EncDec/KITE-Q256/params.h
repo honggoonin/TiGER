@@ -5,10 +5,10 @@
 #define Modulus_Q 256
 #define LOG_P 7
 #define LOG_K_1 7
-#define LOG_K_2 3
-#define HR 164			// Hamming weight of coefficient vector r
+#define LOG_K_2 2
+#define HR 198			// Hamming weight of coefficient vector r
 #define HS 198			// Hamming weight of coefficient vector s
-#define HE 610
+#define HE 32
 #define SEED_LEN 32
 #define KK_LEN 32
 #define size_of_delta 32
