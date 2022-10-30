@@ -6,20 +6,51 @@ NIST-developed software is expressly provided "AS IS." NIST MAKES NO WARRANTY OF
 You are solely responsible for determining the appropriateness of using and distributing the software and you assume all risks associated with its use, including but not limited to the risks and costs of program errors, compliance with applicable laws, damage to or loss of data, programs or equipment, and the unavailability or interruption of operation. This software is not intended to be used in any situation where a failure could cause risk of injury or damage to property. The software developed by NIST employees is not subject to copyright protection within the United States.
 */
 
-//   This is a sample 'api.h' for use 'sign.c'
+#ifndef rng_h
+#define rng_h
 
-#ifndef api_h
-#define api_h
+#include <stdio.h>
 
-#include "params.h"
+#define RNG_SUCCESS      0
+#define RNG_BAD_MAXLEN  -1
+#define RNG_BAD_OUTBUF  -2
+#define RNG_BAD_REQ_LEN -3
 
-//  Set these three values apropriately for your algorithm
-#define CRYPTO_SECRETKEYBYTES SECRETKEYSIZE
-#define CRYPTO_PUBLICKEYBYTES PUBLICKEYSIZE
-#define CRYPTO_BYTES MESSAGE_LEN
-#define CRYPTO_CIPHERTEXTBYTES CIPHERTEXTSIZE
+typedef struct {
+    unsigned char   buffer[16];
+    int             buffer_pos;
+    unsigned long   length_remaining;
+    unsigned char   key[32];
+    unsigned char   ctr[16];
+} AES_XOF_struct;
 
-#define CRYPTO_ALGNAME "KITE-Q"
+typedef struct {
+    unsigned char   Key[32];
+    unsigned char   V[16];
+    int             reseed_counter;
+} AES256_CTR_DRBG_struct;
 
 
-#endif /* api_h */
+void
+AES256_CTR_DRBG_Update(unsigned char *provided_data,
+                       unsigned char *Key,
+                       unsigned char *V);
+
+int
+seedexpander_init(AES_XOF_struct *ctx,
+                  unsigned char *seed,
+                  unsigned char *diversifier,
+                  unsigned long maxlen);
+
+int
+seedexpander(AES_XOF_struct *ctx, unsigned char *x, unsigned long xlen);
+
+void
+randombytes_init(unsigned char *entropy_input,
+                 unsigned char *personalization_string,
+                 int security_strength);
+
+int
+randombytes(unsigned char *x, unsigned long long xlen);
+
+#endif /* rng_h */

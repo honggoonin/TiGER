@@ -4,7 +4,8 @@
 #include <string.h>
 
 #include "KITE-Q_CPAPKE.h"
-#include "randombytes.h"
+// [MODIFIED] replace #include "randombytes.h"
+#include "rng.h"
 #include "fips202.h"
 #include "xef.h"
 
