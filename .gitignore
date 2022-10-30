@@ -1,11 +1,8 @@
 # Ignore temporary experiment results
-*.req
-*.res
 
 # Ignore object files & binary files
 *.o
 test_CCAKEM
-test_KAT
-
+katkem
 
 

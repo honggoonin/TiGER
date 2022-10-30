@@ -1,16 +1,24 @@
+/*
+NIST-developed software is provided by NIST as a public service. You may use, copy, and distribute copies of the software in any medium, provided that you keep intact this entire notice. You may improve, modify, and create derivative works of the software or any portion of the software, and you may copy and distribute such modifications or works. Modified works should carry a notice stating that you changed the software and should note the date and nature of any such change. Please explicitly acknowledge the National Institute of Standards and Technology as the source of the software.
+ 
+NIST-developed software is expressly provided "AS IS." NIST MAKES NO WARRANTY OF ANY KIND, EXPRESS, IMPLIED, IN FACT, OR ARISING BY OPERATION OF LAW, INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTY OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, NON-INFRINGEMENT, AND DATA ACCURACY. NIST NEITHER REPRESENTS NOR WARRANTS THAT THE OPERATION OF THE SOFTWARE WILL BE UNINTERRUPTED OR ERROR-FREE, OR THAT ANY DEFECTS WILL BE CORRECTED. NIST DOES NOT WARRANT OR MAKE ANY REPRESENTATIONS REGARDING THE USE OF THE SOFTWARE OR THE RESULTS THEREOF, INCLUDING BUT NOT LIMITED TO THE CORRECTNESS, ACCURACY, RELIABILITY, OR USEFULNESS OF THE SOFTWARE.
+ 
+You are solely responsible for determining the appropriateness of using and distributing the software and you assume all risks associated with its use, including but not limited to the risks and costs of program errors, compliance with applicable laws, damage to or loss of data, programs or equipment, and the unavailability or interruption of operation. This software is not intended to be used in any situation where a failure could cause risk of injury or damage to property. The software developed by NIST employees is not subject to copyright protection within the United States.
+*/
+
 #include <stdio.h>
-#include <time.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include "rng.h"
+#include "api.h"
 
-
+// [MODIFIED] include headers
 #include "KITE-Q_CPAPKE.h"
 #include "KITE-Q_CCAKEM.h"
 #include "fips202.h"
-#include "randombytes.h"
 #include "params.h"
-#include "api.h"
+
 
 #define	MAX_MARKER_LEN		50
 #define KAT_SUCCESS          0
@@ -22,25 +30,20 @@ int		FindMarker(FILE *infile, const char *marker);
 int		ReadHex(FILE *infile, unsigned char *A, int Length, char *str);
 void	fprintBstr(FILE *fp, char *S, unsigned char *A, unsigned long long L);
 
-unsigned char pk[32+LWE_N];
-unsigned char sk[LWE_N+MESSAGE_LEN];
-
-
-int KAT_RING() {
-
-	unsigned char c[2*LWE_N];
-	int i,j, res=0, res_enc = 0, res_dec = 0;
-	unsigned char coin[32];
-	unsigned char shared_k1[KK_LEN] = {0,};
-	unsigned char shared_k2[KK_LEN] = {0,};
-
-	char                fn_req[32], fn_rsp[32];
+int
+main()
+{
+   
+    char                fn_req[32], fn_rsp[32];
     FILE                *fp_req, *fp_rsp;
-    unsigned char       seed[32];
+    unsigned char       seed[48];
+    unsigned char       entropy_input[48];
+    unsigned char       ct[CRYPTO_CIPHERTEXTBYTES], ss[CRYPTO_BYTES], ss1[CRYPTO_BYTES];
     int                 count;
     int                 done;
+    unsigned char       pk[CRYPTO_PUBLICKEYBYTES], sk[CRYPTO_SECRETKEYBYTES];
     int                 ret_val;
-
+    
     // Create the REQUEST file
     sprintf(fn_req, "PQCkemKAT_%d.req", CRYPTO_SECRETKEYBYTES);
     if ( (fp_req = fopen(fn_req, "w")) == NULL ) {
@@ -52,23 +55,28 @@ int KAT_RING() {
         printf("Couldn't open <%s> for write\n", fn_rsp);
         return KAT_FILE_OPEN_ERROR;
     }
+    
+    for (int i=0; i<48; i++)
+        entropy_input[i] = i;
 
- 	for (int i=0; i<100; i++) {
+    randombytes_init(entropy_input, NULL, 256);
+    for (int i=0; i<100; i++) {
         fprintf(fp_req, "count = %d\n", i);
-        randombytes(seed, 32);
-        fprintBstr(fp_req, "seed = ", seed, 32);
+        randombytes(seed, 48);
+        fprintBstr(fp_req, "seed = ", seed, 48);
         fprintf(fp_req, "pk =\n");
         fprintf(fp_req, "sk =\n");
-        fprintf(fp_req, "ct =\n"); // == c
-        fprintf(fp_req, "ss =\n\n"); // == shared_k1
+        fprintf(fp_req, "ct =\n");
+        fprintf(fp_req, "ss =\n\n");
     }
     fclose(fp_req);
-
+    
+    //Create the RESPONSE file based on what's in the REQUEST file
     if ( (fp_req = fopen(fn_req, "r")) == NULL ) {
         printf("Couldn't open <%s> for read\n", fn_req);
         return KAT_FILE_OPEN_ERROR;
-    }	
-
+    }
+    
     fprintf(fp_rsp, "# %s\n\n", CRYPTO_ALGNAME);
     done = 0;
     do {
@@ -79,60 +87,48 @@ int KAT_RING() {
             break;
         }
         fprintf(fp_rsp, "count = %d\n", count);
-
-        if ( !ReadHex(fp_req, seed, 32, "seed = ") ) {
+        
+        if ( !ReadHex(fp_req, seed, 48, "seed = ") ) {
             printf("ERROR: unable to read 'seed' from <%s>\n", fn_req);
             return KAT_DATA_ERROR;
         }
-        fprintBstr(fp_rsp, "seed = ", seed, 32);
-
-
-		if ( (ret_val=KEM_Keygen(pk,sk)) != 0){
-            printf("KEM_Keygen returned <%d>\n", ret_val);
-            return KAT_CRYPTO_FAILURE;
-		}
-        fprintBstr(fp_rsp, "pk = ", pk, CRYPTO_PUBLICKEYBYTES);
-        fprintBstr(fp_rsp, "sk = ", sk, CRYPTO_SECRETKEYBYTES);
-
-
-		//start_cycle1 = rdtsc();
-		if ( (ret_val = KEM_Enc(c, shared_k1, pk)) != 0){
-			printf("KEM_Enc returned <%d>\n", ret_val);
-            return KAT_CRYPTO_FAILURE;		
-		};
-
-		fprintBstr(fp_rsp, "ct = ", c, CRYPTO_CIPHERTEXTBYTES);
-		fprintBstr(fp_rsp, "ss = ", shared_k1, CRYPTO_BYTES);
-
-        fprintf(fp_rsp, "\n");
-
-		//start_cycle2 = rdtsc();
-		if ((ret_val = KEM_dec(shared_k2, c, sk, pk)) != 0){
-            printf("KEM_dec returned <%d>\n", ret_val);
-            return KAT_CRYPTO_FAILURE;
-		}
-
-        if ( memcmp(shared_k1, shared_k2, CRYPTO_BYTES) ) {
-            printf("KEM_dec returned bad 'ss' value\n");
+        fprintBstr(fp_rsp, "seed = ", seed, 48);
+        
+        randombytes_init(seed, NULL, 256);
+        
+        // Generate the public/private keypair
+        if ( (ret_val = KEM_Keygen(pk, sk)) != 0) { // [MODIFIED] call KEM_Keygen
+            printf("crypto_kem_keypair returned <%d>\n", ret_val);
             return KAT_CRYPTO_FAILURE;
         }
-	
-	} while ( !done );
+        fprintBstr(fp_rsp, "pk = ", pk, CRYPTO_PUBLICKEYBYTES);
+        fprintBstr(fp_rsp, "sk = ", sk, CRYPTO_SECRETKEYBYTES);
+        
+        if ( (ret_val = KEM_Enc(ct, ss, pk)) != 0) { // [MODIFIED] call KEM_Enc
+            printf("crypto_kem_enc returned <%d>\n", ret_val);
+            return KAT_CRYPTO_FAILURE;
+        }
+        fprintBstr(fp_rsp, "ct = ", ct, CRYPTO_CIPHERTEXTBYTES);
+        fprintBstr(fp_rsp, "ss = ", ss, CRYPTO_BYTES);
+        
+        fprintf(fp_rsp, "\n");
+        
+        if ( (ret_val = KEM_dec(ss1, ct, sk, pk)) != 0) { // [MODIFIED] call KEM_dec
+            printf("crypto_kem_dec returned <%d>\n", ret_val);
+            return KAT_CRYPTO_FAILURE;
+        }
+        
+        if ( memcmp(ss, ss1, CRYPTO_BYTES) ) {
+            printf("crypto_kem_dec returned bad 'ss' value\n");
+            return KAT_CRYPTO_FAILURE;
+        }
 
+    } while ( !done );
+    
     fclose(fp_req);
     fclose(fp_rsp);
 
     return KAT_SUCCESS;
-
-}
-
-void main() {
-	printf("\n  //////////////////////////////////////////////////////////////////\n\n");
-	printf("\t\t"PARAMNAME" \n\n");
-	printf("\t\tKnown Answer Test\n\n");
-	printf("  //////////////////////////////////////////////////////////////////\n\n");
-	// Enc and Dec
-	KAT_RING();
 }
 
 
@@ -216,7 +212,7 @@ ReadHex(FILE *infile, unsigned char *A, int Length, char *str)
 				ich = ch - 'a' + 10;
             else // shouldn't ever get here
                 ich = 0;
-
+			
 			for ( i=0; i<Length-1; i++ )
 				A[i] = (A[i] << 4) | (A[i+1] >> 4);
 			A[Length-1] = (A[Length-1] << 4) | ich;
