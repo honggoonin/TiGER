@@ -23,7 +23,7 @@ int KEM_Keygen(unsigned char *pk, unsigned char *sk){
 	return 0;
 }
 
-int KEM_Enc(unsigned char *c, unsigned char *shared_k, unsigned char *pk){
+int KEM_Enc(unsigned char *c, unsigned char *shared_k, const unsigned char *pk){
 	int res;
 	unsigned char delta_kem[size_of_delta] = {0, };
 	unsigned char coin[32];
@@ -46,7 +46,7 @@ int KEM_Enc(unsigned char *c, unsigned char *shared_k, unsigned char *pk){
 	return 0;
 }
 
-int KEM_dec(unsigned char *shared_k, unsigned char *c, unsigned char *sk, unsigned char *pk){
+int KEM_dec(unsigned char *shared_k, const unsigned char *c, const unsigned char *sk, unsigned char *pk){
 	int i, res_enc, res_dec;
 	unsigned char u[MESSAGE_LEN];
 	unsigned char sk_CPA[LWE_N];

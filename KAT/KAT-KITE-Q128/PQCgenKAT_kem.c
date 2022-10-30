@@ -17,7 +17,6 @@ You are solely responsible for determining the appropriateness of using and dist
 #include "KITE-Q_CPAPKE.h"
 #include "KITE-Q_CCAKEM.h"
 #include "fips202.h"
-#include "params.h"
 
 
 #define	MAX_MARKER_LEN		50
@@ -30,6 +29,9 @@ int		FindMarker(FILE *infile, const char *marker);
 int		ReadHex(FILE *infile, unsigned char *A, int Length, char *str);
 void	fprintBstr(FILE *fp, char *S, unsigned char *A, unsigned long long L);
 
+unsigned char       pk[CRYPTO_PUBLICKEYBYTES];
+unsigned char       sk[CRYPTO_SECRETKEYBYTES];
+
 int
 main()
 {
@@ -41,9 +43,9 @@ main()
     unsigned char       ct[CRYPTO_CIPHERTEXTBYTES], ss[CRYPTO_BYTES], ss1[CRYPTO_BYTES];
     int                 count;
     int                 done;
-    unsigned char       pk[CRYPTO_PUBLICKEYBYTES], sk[CRYPTO_SECRETKEYBYTES];
     int                 ret_val;
     
+
     // Create the REQUEST file
     sprintf(fn_req, "PQCkemKAT_%d.req", CRYPTO_SECRETKEYBYTES);
     if ( (fp_req = fopen(fn_req, "w")) == NULL ) {
@@ -97,14 +99,14 @@ main()
         randombytes_init(seed, NULL, 256);
         
         // Generate the public/private keypair
-        if ( (ret_val = KEM_Keygen(pk, sk)) != 0) { // [MODIFIED] call KEM_Keygen
+        if ( (ret_val = crypto_kem_keypair(pk, sk)) != 0) {
             printf("crypto_kem_keypair returned <%d>\n", ret_val);
             return KAT_CRYPTO_FAILURE;
         }
         fprintBstr(fp_rsp, "pk = ", pk, CRYPTO_PUBLICKEYBYTES);
         fprintBstr(fp_rsp, "sk = ", sk, CRYPTO_SECRETKEYBYTES);
         
-        if ( (ret_val = KEM_Enc(ct, ss, pk)) != 0) { // [MODIFIED] call KEM_Enc
+        if ( (ret_val = crypto_kem_enc(ct, ss, pk)) != 0) {
             printf("crypto_kem_enc returned <%d>\n", ret_val);
             return KAT_CRYPTO_FAILURE;
         }
@@ -113,7 +115,8 @@ main()
         
         fprintf(fp_rsp, "\n");
         
-        if ( (ret_val = KEM_dec(ss1, ct, sk, pk)) != 0) { // [MODIFIED] call KEM_dec
+        if ( (ret_val = crypto_kem_dec(ss1, ct, sk)) != 0) {
+
             printf("crypto_kem_dec returned <%d>\n", ret_val);
             return KAT_CRYPTO_FAILURE;
         }

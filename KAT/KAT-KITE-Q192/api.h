@@ -21,4 +21,11 @@ You are solely responsible for determining the appropriateness of using and dist
 
 #define CRYPTO_ALGNAME "KITE-Q"
 
+extern unsigned char pk[CRYPTO_PUBLICKEYBYTES];
+extern unsigned char sk[CRYPTO_SECRETKEYBYTES];
+
+int crypto_kem_keypair(unsigned char *pk, unsigned char *sk);
+int crypto_kem_enc( unsigned char *ct, unsigned char *ss, const unsigned char *pk);
+int crypto_kem_dec( unsigned char *ss, const unsigned char *ct, const unsigned char *sk);
+
 #endif /* api_h */
