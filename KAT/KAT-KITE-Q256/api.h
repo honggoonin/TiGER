@@ -12,6 +12,9 @@ You are solely responsible for determining the appropriateness of using and dist
 #define api_h
 
 #include "params.h"
+#include "KITE-Q_CPAPKE.h"
+#include "KITE-Q_CCAKEM.h"
+#include "fips202.h"
 
 //  Set these three values apropriately for your algorithm
 #define CRYPTO_SECRETKEYBYTES SECRETKEYSIZE

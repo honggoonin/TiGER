@@ -13,12 +13,6 @@ You are solely responsible for determining the appropriateness of using and dist
 #include "rng.h"
 #include "api.h"
 
-// [MODIFIED] include headers
-#include "KITE-Q_CPAPKE.h"
-#include "KITE-Q_CCAKEM.h"
-#include "fips202.h"
-
-
 #define	MAX_MARKER_LEN		50
 #define KAT_SUCCESS          0
 #define KAT_FILE_OPEN_ERROR -1
@@ -34,8 +28,7 @@ unsigned char       sk[CRYPTO_SECRETKEYBYTES];
 
 int
 main()
-{
-   
+{  
     char                fn_req[32], fn_rsp[32];
     FILE                *fp_req, *fp_rsp;
     unsigned char       seed[48];
@@ -45,7 +38,6 @@ main()
     int                 done;
     int                 ret_val;
     
-
     // Create the REQUEST file
     sprintf(fn_req, "PQCkemKAT_%d.req", CRYPTO_SECRETKEYBYTES);
     if ( (fp_req = fopen(fn_req, "w")) == NULL ) {
@@ -116,7 +108,6 @@ main()
         fprintf(fp_rsp, "\n");
         
         if ( (ret_val = crypto_kem_dec(ss1, ct, sk)) != 0) {
-
             printf("crypto_kem_dec returned <%d>\n", ret_val);
             return KAT_CRYPTO_FAILURE;
         }
