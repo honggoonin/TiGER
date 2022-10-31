@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "KITE-Q_CPAPKE.h"
-#include "randombytes.h"
+#include "rng.h"
 #include "fips202.h"
 #include "xef.h"
 #include "D2.h"
@@ -70,7 +70,7 @@ int Keygen(unsigned char *pk, unsigned char *sk){
 
 
 
-int Encryption(unsigned char *c, unsigned char *pk, unsigned char *Message, unsigned char *coin){ 
+int Encryption(unsigned char *c, const unsigned char *pk, unsigned char *Message, unsigned char *coin){ 
 	int i, j;
 	unsigned char c1[LWE_N*2]={0,};
 	unsigned char c2[LWE_N*2]={0,};	
@@ -116,11 +116,11 @@ int Encryption(unsigned char *c, unsigned char *pk, unsigned char *Message, unsi
 
 
 //// Step4 : Gen poly_e1 and poly_e2. //// 
-	unsigned char tmp_e1[HE*4], tmp_e2[HE*4];
+	unsigned char tmp_e1[HE*10], tmp_e2[HE*10];
 	unsigned int e1_random_idx, e2_random_idx; 
 	hw=0, count = 0;
 	
-	shake256(tmp_e1, HE*4, Seed_e1, SEED_LEN);
+	shake256(tmp_e1, HE*10, Seed_e1, SEED_LEN);
 	
 	while (hw < HE) {
 		e1_random_idx = tmp_e1[count++]; 
@@ -131,8 +131,8 @@ int Encryption(unsigned char *c, unsigned char *pk, unsigned char *Message, unsi
 			c1[e1_random_idx] = (tmp_e1[count++] & 0x02) - 1;
 			hw++;
 		}
-		if (count >= (HE*4 - 3)) { 
-			shake256(tmp_e1, HE*4, tmp_e1, HE*4);
+		if (count >= (HE*10 - 3)) { 
+			shake256(tmp_e1, HE*10, tmp_e1, HE*10);
 			count = 0;
 			printf("Make the tmp_e1.\n");
 		}
@@ -140,7 +140,7 @@ int Encryption(unsigned char *c, unsigned char *pk, unsigned char *Message, unsi
 
 	hw=0, count = 0;
 	
-	shake256(tmp_e2, HE*4, Seed_e2, SEED_LEN);
+	shake256(tmp_e2, HE*10, Seed_e2, SEED_LEN);
 	
 	while (hw < HE) {
 		e2_random_idx = tmp_e2[count++]; 
@@ -151,8 +151,8 @@ int Encryption(unsigned char *c, unsigned char *pk, unsigned char *Message, unsi
 			c2[e2_random_idx] = ((tmp_e2[count++] & 0x02) - 1)<<(LOG_Q-LOG_P);
 			hw++;
 		}
-		if (count >= (HE*4 - 3)) { 
-			shake256(tmp_e2, HE*4, tmp_e2, HE*4);
+		if (count >= (HE*10 - 3)) { 
+			shake256(tmp_e2, HE*10, tmp_e2, HE*10);
 			count = 0;
 			printf("Make the tmp_e2.\n");
 		}
@@ -202,17 +202,17 @@ int Encryption(unsigned char *c, unsigned char *pk, unsigned char *Message, unsi
 		c1[j] -= c1[LWE_N+j];
 		c2[j] -= c2[LWE_N+j];
 	}
-// (3) Send c1h_a and c1h_b from mod q to mod k1(128) and mod k2(4).
+// (3) Send c1h_a and c1h_b from mod q to mod k1(128) and mod k2(8).
 	for (i=0; i< LWE_N; ++i) {
 		c[i] = ((c1[i] + 0x01) & 0xfe);
-		c[LWE_N + i] = ((c2[i] + 0x20) & 0xc0);    // 4=0x20/0xc0 8=0x10/0xe0, 16=0x08/0xf0, 32=0x04/0xf8 64=0x02/0xfc, 128= 0x01 0xfe
+		c[LWE_N + i] = ((c2[i] + 0x10) & 0xe0);    // 4=0x20/0xc0 8=0x10/0xe0, 16=0x08/0xf0, 32=0x04/0xf8 64=0x02/0xfc, 128= 0x01 0xfe
 	}
 
 	return 0;
 }
 
 
-int Decryption(unsigned char *Message, unsigned char *c, unsigned char *sk){
+int Decryption(unsigned char *Message, const unsigned char *c, const unsigned char *sk){
 	int i, j;
 
 	unsigned char c1_hat[LWE_N*2] = { 0, };

@@ -1,4 +1,4 @@
-#define PARAMNAME "KITE-Q_CCAKEM"
+#define PARAMNAME "KITE-Q128"
 #define LWE_N 512		// LWE dim and LWR dim
 #define LOG_N 9
 #define LOG_Q 8

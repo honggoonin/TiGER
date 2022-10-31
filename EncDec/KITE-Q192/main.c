@@ -6,11 +6,11 @@
 #include "KITE-Q_CPAPKE.h"
 #include "KITE-Q_CCAKEM.h"
 #include "fips202.h"
-#include "randombytes.h"
+#include "rng.h"
 #include "params.h"
 
 #define iter 100 // iteration number for keygen & EncDec test
-#define testnum 1000	// repeatetion number of Enc Dec procedure in a single iteration
+#define testnum 10000	// repeatetion number of Enc Dec procedure in a single iteration
 
 // add(rdtsc)//
 uint64_t start_cycle1, finish_cycle1, start_cycle2, finish_cycle2, start_cycle3, finish_cycle3, cycles1, cycles2, cycles3, elapsed1, elapsed2;
@@ -40,7 +40,10 @@ void EncDecTest_RING() {
 	elapsed1 = 0;
 	elapsed2 = 0;
 	int fail = 0;
+	int startTime, endTime;
+	float execTime;
 
+	startTime = clock();
 	for (int l = 0; l < iter; ++l) {
 
 		start_cycle3 = rdtsc();
@@ -67,6 +70,10 @@ void EncDecTest_RING() {
 			}
 		}
 	}
+	endTime = clock();
+	execTime = (float)(endTime - startTime)/CLOCKS_PER_SEC;
+
+	printf("Execution time: %f\n", execTime);
 	printf("    Key Cycles: %lu \n",  cycles3/iter);
 	printf("    Enc Cycles: %lu \n",  cycles1/iter/testnum);
 	printf("    Dec Cycles: %lu \n",  cycles2/iter/testnum);

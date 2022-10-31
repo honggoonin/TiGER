@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "KITE-Q_CPAPKE.h"
-#include "randombytes.h"
+#include "rng.h"
 #include "fips202.h"
 #include "xef.h"
 #include "D2.h"
@@ -70,7 +70,7 @@ int Keygen(unsigned char *pk, unsigned char *sk){
 
 
 
-int Encryption(unsigned char *c, unsigned char *pk, unsigned char *Message, unsigned char *coin){ 
+int Encryption(unsigned char *c, const unsigned char *pk, unsigned char *Message, unsigned char *coin){ 
 	int i, j;
 	unsigned char c1[LWE_N*2]={0,};
 	unsigned char c2[LWE_N*2]={0,};	
@@ -212,7 +212,7 @@ int Encryption(unsigned char *c, unsigned char *pk, unsigned char *Message, unsi
 }
 
 
-int Decryption(unsigned char *Message, unsigned char *c, unsigned char *sk){
+int Decryption(unsigned char *Message, const unsigned char *c, const unsigned char *sk){
 	int i, j;
 
 	unsigned char c1_hat[LWE_N*2] = { 0, };

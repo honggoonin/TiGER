@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "KITE-Q_CPAPKE.h"
-#include "randombytes.h"
+#include "rng.h"
 #include "fips202.h"
 #include "xef.h"
 #include "D2.h"
@@ -56,6 +56,7 @@ int Keygen(unsigned char *pk, unsigned char *sk){
 		uint16_t deg = sk_s[i];
 		uint16_t branch = (2 * ((i - neg_start) >> sft & 0x1) - 1);
 		for (j = 0; j < LWE_N; ++j) {pk_b[deg + j] += branch * pk_a[j];}
+		
 	}
 	for (i = 0; i < LWE_N; ++i) {pk_b[i] -= pk_b[LWE_N + i];}
 	for (i = 0; i < LWE_N; ++i) {pk_b[i] = ((pk_b[i] + 0x01) & 0xfe);} // 16=0x08/0xf0, 32=0x04/0xf8 64=0x02/0xfc, 128= 0x01 0xfe
@@ -70,7 +71,7 @@ int Keygen(unsigned char *pk, unsigned char *sk){
 
 
 
-int Encryption(unsigned char *c, unsigned char *pk, unsigned char *Message, unsigned char *coin){ 
+int Encryption(unsigned char *c, const unsigned char *pk, unsigned char *Message, unsigned char *coin){ 
 	int i, j;
 	unsigned char c1[LWE_N*2]={0,};
 	unsigned char c2[LWE_N*2]={0,};	
@@ -212,7 +213,7 @@ int Encryption(unsigned char *c, unsigned char *pk, unsigned char *Message, unsi
 }
 
 
-int Decryption(unsigned char *Message, unsigned char *c, unsigned char *sk){
+int Decryption(unsigned char *Message, const unsigned char *c, const unsigned char *sk){
 	int i, j;
 
 	unsigned char c1_hat[LWE_N*2] = { 0, };
