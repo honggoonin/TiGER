@@ -3,8 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "KITE-Q_CPAPKE.h"
-#include "KITE-Q_CCAKEM.h"
+#include "TIGER_CPAPKE.h"
+#include "TIGER_CCAKEM.h"
 #include "fips202.h"
 #include "rng.h"
 #include "params.h"

@@ -1,4 +1,4 @@
-#define PARAMNAME "TIGER128"
+#define PARAMNAME "TIGER_CCAKEM"
 #define LWE_N 512		// LWE dim and LWR dim
 #define LOG_N 9
 #define LOG_Q 8
@@ -12,6 +12,11 @@
 #define SEED_LEN 32
 #define KK_LEN 16
 #define size_of_delta 16
+
+#define PUBLICKEYSIZE 32+LWE_N 
+#define SECRETKEYSIZE LWE_N+MESSAGE_LEN 
+#define CIPHERTEXTSIZE LWE_N*2 
+
 #define MESSAGE_LEN 16
 #define _8_LOG_T 7
 #define sft (sizeof(size_t) * 4 - 1)

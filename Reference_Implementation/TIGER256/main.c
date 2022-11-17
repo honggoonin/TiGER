@@ -9,8 +9,8 @@
 #include "rng.h"
 #include "params.h"
 
-#define iter 1000 // iteration number for keygen & EncDec test
-#define testnum 1000	// repeatetion number of Enc Dec procedure in a single iteration
+#define iter 100 // iteration number for keygen & EncDec test
+#define testnum 10000	// repeatetion number of Enc Dec procedure in a single iteration
 
 // add(rdtsc)//
 uint64_t start_cycle1, finish_cycle1, start_cycle2, finish_cycle2, start_cycle3, finish_cycle3, cycles1, cycles2, cycles3, elapsed1, elapsed2;

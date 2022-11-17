@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include "params.h"
-#include "KITE-Q_CPAPKE.h"
+#include "TIGER_CPAPKE.h"
 
 
 int KEM_Keygen(unsigned char *pk, unsigned char *sk);

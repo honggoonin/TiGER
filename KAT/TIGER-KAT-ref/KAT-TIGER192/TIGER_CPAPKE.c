@@ -24,48 +24,41 @@ int Keygen(unsigned char *pk, unsigned char *sk){
 
 
 //// Step3 : Gens poly s and s_idx. s_idx is a index in -1 or 1 ////
-	unsigned char tmp_s[HS*3];
+	unsigned char tmp_s[HS*4];
 	uint16_t sk_s[HS];
 	unsigned int sk_random_idx;
 	int hw=0, count = 0, neg_start=0, back_position = HS;
 	memset(sk, 0, LWE_N);
 
-	shake256(tmp_s, HS*3, seed_s, SEED_LEN);
-	unsigned char ts;
+	shake256(tmp_s, HS*4, seed_s, SEED_LEN);
+
 	while (hw < HS) {
 		sk_random_idx = tmp_s[count++]; 
 		sk_random_idx <<= 8;
 		sk_random_idx ^= tmp_s[count++];
-		ts=(sk_random_idx&0x02)-1;
-		sk_random_idx >>= 2;
 		sk_random_idx &= (LWE_N - 1);
 		if (sk[sk_random_idx] == 0) {
-			sk[sk_random_idx] = ts;
+			sk[sk_random_idx] = (tmp_s[count++] & 0x02) - 1;
 			hw++;
 			if (sk[sk_random_idx]==0x01){sk_s[neg_start++] = sk_random_idx;}
 			if (sk[sk_random_idx]==0xff){sk_s[--back_position] = sk_random_idx;}
 		}
-		if (count >= HS*3 - 3) {
-			shake256(tmp_s, HS*3, tmp_s, HS*3);
+		if (count >= HS*4 - 3) {
+			shake256(tmp_s, HS*4, tmp_s, HS*4);
 			printf("Make the tmp_s. \n");
 			count = 0;
 		}
 	}
 
 
-//// Step4 : Gen poly_b := (p/q)*a*s ; p=128 ////
+//// Step4 : Gen poly_b := (p/q)*a*s ; p=64 ////
 	for (i = 0; i < HS; ++i) {
 		uint16_t deg = sk_s[i];
 		uint16_t branch = (2 * ((i - neg_start) >> sft & 0x1) - 1);
-		if(branch==1){
-				for (j = 0; j < LWE_N; ++j) {pk_b[deg + j] += pk_a[j];}
-		}
-		else{
-				for (j = 0; j < LWE_N; ++j) {pk_b[deg + j] += ((~pk_a[j])+0x01);}
-		}
+		for (j = 0; j < LWE_N; ++j) {pk_b[deg + j] += branch * pk_a[j];}
 	}
 	for (i = 0; i < LWE_N; ++i) {pk_b[i] -= pk_b[LWE_N + i];}
-	for (i = 0; i < LWE_N; ++i) {pk_b[i] = ((pk_b[i] + 0x01) & 0xfe);} // 16=0x08/0xf0, 32=0x04/0xf8 64=0x02/0xfc, 128= 0x01 0xfe
+	for (i = 0; i < LWE_N; ++i) {pk_b[i] = ((pk_b[i] + 0x02) & 0xfc);} // 16=0x08/0xf0, 32=0x04/0xf8 64=0x02/0xfc, 128= 0x01 0xfe
 
 
 //// Step5 : Concat seed_genA || pk_b ////
@@ -84,29 +77,27 @@ int Encryption(unsigned char *c, const unsigned char *pk, unsigned char *Message
 	
 
 //// Step1 : Gen r_poly and r_idx ////
-	unsigned char tmp_r[HR*3];
+	unsigned char tmp_r[HR*4];
 	uint16_t r_idx[HR];
 	unsigned int r_random_idx; 
 	int hw=0, count = 0, neg_start = 0, back_position = HR;
 
 	unsigned char r[LWE_N]={0,};
-	shake256(tmp_r, HR*3, coin, SEED_LEN);
-	unsigned char tr;
+	shake256(tmp_r, HR*4, coin, SEED_LEN);
+	
 	while (hw < HR) {
 		r_random_idx = tmp_r[count++]; 
 		r_random_idx <<= 8;	
 		r_random_idx ^= tmp_r[count++];
-		tr=(r_random_idx&0x02)-1;
-		r_random_idx >>= 2;		
-		r_random_idx &= (LWE_N - 1);  
+		r_random_idx = r_random_idx & (LWE_N - 1);  
 		if (r[r_random_idx] == 0) {
-			r[r_random_idx] = tr;
+			r[r_random_idx] = (tmp_r[count++] & 0x02) - 1;
 			hw++;
 			if (r[r_random_idx] == 0x01){r_idx[neg_start++] = r_random_idx;}
 			if (r[r_random_idx] == 0xff){r_idx[--back_position] = r_random_idx;}
 		}
-		if (count >= (HR*3 - 3)) { 
-			shake256(tmp_r, HR*3, tmp_r, HR*3);
+		if (count >= (HR*4 - 3)) { 
+			shake256(tmp_r, HR*4, tmp_r, HR*4);
 			count = 0;
 			printf("Make the tmp_r. \n");
 		}
@@ -125,25 +116,23 @@ int Encryption(unsigned char *c, const unsigned char *pk, unsigned char *Message
 
 
 //// Step4 : Gen poly_e1 and poly_e2. //// 
-	unsigned char tmp_e1[HE*3], tmp_e2[HE*3];
+	unsigned char tmp_e1[HE*4], tmp_e2[HE*4];
 	unsigned int e1_random_idx, e2_random_idx; 
 	hw=0, count = 0;
 	
-	shake256(tmp_e1, HE*3, Seed_e1, SEED_LEN);
-	unsigned char te1;
+	shake256(tmp_e1, HE*4, Seed_e1, 32);
+	
 	while (hw < HE) {
 		e1_random_idx = tmp_e1[count++]; 
 		e1_random_idx <<= 8;	
 		e1_random_idx ^= tmp_e1[count++];
-		te1=(e1_random_idx&0x02)-1;
-		e1_random_idx >>= 2;
-		e1_random_idx &= (LWE_N - 1);  
+		e1_random_idx = e1_random_idx & (LWE_N - 1);  
 		if (c1[e1_random_idx] == 0) {
-			c1[e1_random_idx] = te1;
+			c1[e1_random_idx] = (tmp_e1[count++] & 0x02) - 1;
 			hw++;
 		}
-		if (count >= (HE*3 - 3)) { 
-			shake256(tmp_e1, HE*3, tmp_e1, HE*3);
+		if (count >= (HE*4 - 3)) { 
+			shake256(tmp_e1, HE*4, tmp_e1, HE*4);
 			count = 0;
 			printf("Make the tmp_e1.\n");
 		}
@@ -151,21 +140,19 @@ int Encryption(unsigned char *c, const unsigned char *pk, unsigned char *Message
 
 	hw=0, count = 0;
 	
-	shake256(tmp_e2, HE*3, Seed_e2, SEED_LEN);
-	unsigned char te2;
+	shake256(tmp_e2, HE*4, Seed_e2, 32);
+	
 	while (hw < HE) {
 		e2_random_idx = tmp_e2[count++]; 
 		e2_random_idx <<= 8;	
 		e2_random_idx ^= tmp_e2[count++];
-		te2=(e2_random_idx&0x02)-1;
-		e2_random_idx >>= 2;
-		e2_random_idx &= (LWE_N - 1);  
+		e2_random_idx = e2_random_idx & (LWE_N - 1);  
 		if (c2[e2_random_idx] == 0) {
-			c2[e2_random_idx] = te2<<(LOG_Q-LOG_P);
+			c2[e2_random_idx] = ((tmp_e2[count++] & 0x02) - 1)<<(LOG_Q-LOG_P);
 			hw++;
 		}
-		if (count >= (HE*3 - 3)) { 
-			shake256(tmp_e2, HE*3, tmp_e2, HE*3);
+		if (count >= (HE*4 - 3)) { 
+			shake256(tmp_e2, HE*4, tmp_e2, HE*4);
 			count = 0;
 			printf("Make the tmp_e2.\n");
 		}
@@ -206,21 +193,19 @@ int Encryption(unsigned char *c, const unsigned char *pk, unsigned char *Message
 	for(i = 0; i < HR; ++i){
 		uint16_t branch = (2 * ((i - neg_start) >> sft & 0x1) - 1);
 		uint16_t deg = r_idx[i];
-		if(branch==1){
-				for (j = 0; j < LWE_N; ++j) {c1[deg+j] += pk_a[j]; c2[deg+j] += pk_b[j];}
-		}
-		else{
-				for (j = 0; j < LWE_N; ++j) {c1[deg + j] += ((~pk_a[j])+0x01); c2[deg + j] += ((~pk_b[j])+0x01);}
+		for(j = 0; j < LWE_N; ++j){
+			c1[deg+j] += branch * pk_a[j];
+			c2[deg+j] += branch * pk_b[j];
 		}
 	}
 	for(j = 0; j < LWE_N; ++j){
 		c1[j] -= c1[LWE_N+j];
 		c2[j] -= c2[LWE_N+j];
 	}
-// (3) Send c1h_a and c1h_b from mod q to mod k1(128) and mod k2(8).
+// (3) Send c1h_a and c1h_b from mod q to mod k1(64) and mod k2(4).
 	for (i=0; i< LWE_N; ++i) {
-		c[i] = ((c1[i] + 0x01) & 0xfe);
-		c[LWE_N + i] = ((c2[i] + 0x10) & 0xe0);    // 4=0x20/0xc0 8=0x10/0xe0, 16=0x08/0xf0, 32=0x04/0xf8 64=0x02/0xfc, 128= 0x01 0xfe
+		c[i] = ((c1[i] + 0x02) & 0xfc);
+		c[LWE_N + i] = ((c2[i] + 0x20) & 0xc0);    // 4=0x20/0xc0 8=0x10/0xe0, 16=0x08/0xf0, 32=0x04/0xf8 64=0x02/0xfc, 128= 0x01 0xfe
 	}
 
 	return 0;
@@ -253,12 +238,9 @@ int Decryption(unsigned char *Message, const unsigned char *c, const unsigned ch
 	for(i = 0; i < HS; ++i){
 		uint16_t branch = (2 * ((i - neg_start) >> sft & 0x1) - 1);
 		uint16_t deg = sk_s[i];
-		if(branch==1){
-				for (j = 0; j < LWE_N; ++j) {decomp_delta[deg+j] -= c1_hat[j];}
-		}
-		else{
-				for (j = 0; j < LWE_N; ++j) {decomp_delta[deg+j] -= ((~c1_hat[j])+0x01);}
-		}
+		for(j = 0; j < LWE_N; ++j){
+			decomp_delta[deg+j] -= branch * c1_hat[j];
+	    }
 	}
 	for(j = 0; j < LWE_N; ++j){decomp_delta[j] -= decomp_delta[LWE_N+j];}
 

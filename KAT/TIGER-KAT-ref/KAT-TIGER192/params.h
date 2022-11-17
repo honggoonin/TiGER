@@ -12,6 +12,11 @@
 #define SEED_LEN 32
 #define KK_LEN 32
 #define size_of_delta 32
+
+#define PUBLICKEYSIZE 32+LWE_N 
+#define SECRETKEYSIZE LWE_N+MESSAGE_LEN 
+#define CIPHERTEXTSIZE LWE_N*2 
+
 #define MESSAGE_LEN 32
 #define _8_LOG_T 7
 #define sft (sizeof(size_t) * 4 - 1)

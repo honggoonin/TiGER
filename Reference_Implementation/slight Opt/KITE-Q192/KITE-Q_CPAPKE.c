@@ -2,7 +2,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include <string.h>
-#include "KITE-Q_CPAPKE.h"
+#include "TIGER_CPAPKE.h"
 #include "rng.h"
 #include "fips202.h"
 #include "xef.h"
