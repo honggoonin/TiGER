@@ -1,0 +1,11 @@
+# Ignore setting files
+*.json
+
+# Ignore temporary experiment results
+
+# Ignore object files & binary files
+*.o
+test_CCAKEM
+katkem
+
+
