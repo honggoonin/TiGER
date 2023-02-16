@@ -10,7 +10,7 @@
 #include "params.h"
 
 #define iter 1 // iteration number for keygen & EncDec test
-#define testnum 1000	// repeatetion number of Enc Dec procedure in a single iteration
+#define testnum 1000000	// repeatetion number of Enc Dec procedure in a single iteration
 
 // add(rdtsc)//
 uint64_t start_cycle1, finish_cycle1, start_cycle2, finish_cycle2, start_cycle3, finish_cycle3, cycles1, cycles2, cycles3, elapsed1, elapsed2;
@@ -44,12 +44,12 @@ void progress_bar(int count) {
 	for(i=0; i<LEN; i++) {
 		if(bar_count > i){
 			printf("%c", bar);
-		} else {
-			printf("%c", blank);
-		}
+		} 
 	}
+	printf("% *c",LEN-bar_count+1);
 	printf("] %0.2f%%", percent);
-	usleep(SPEED);
+	fflush(stdout);
+	//usleep(SPEED);
 }
 
 
@@ -122,7 +122,9 @@ void main() {
 	//printf("\t\tPerformance Test\n\n");
 	//printf("  //////////////////////////////////////////////////////////////////\n\n");
 	// Enc and Dec
+	printf("%s\n", PARAMNAME);
 	printf("\n");
+
 	printf(
 "\t                ,,                                     \n"
 "\t  MMPmmMMmmYMM  db   .g8mmmbgd  7MMmmmYMM   7MMmmmMq.  \n"
