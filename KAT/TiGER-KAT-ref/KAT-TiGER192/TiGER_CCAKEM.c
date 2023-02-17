@@ -5,9 +5,9 @@
 
 #include "TiGER_CPAPKE.h"
 #include "rng.h"
-
 #include "fips202.h"
 #include "xef.h"
+#include "util.h"
 
 
 int KEM_Keygen(unsigned char *pk, unsigned char *sk){
@@ -30,18 +30,21 @@ int KEM_Enc(unsigned char *c, unsigned char *shared_k, const unsigned char *pk){
 
 	randombytes(delta_kem, size_of_delta);
 
-	sha3_256(coin, delta_kem, size_of_delta);
+	unsigned char temp_coin[size_of_delta+32];
+	memcpy(temp_coin, delta_kem, size_of_delta);
+	sha3_256(temp_coin+size_of_delta, pk, PUBLICKEYSIZE);  // H function
+	sha3_256(coin, temp_coin, size_of_delta+32);		// G function
 
 	res=Encryption(c, pk, delta_kem, coin);
+	
+	unsigned char hash_c[32];
+	sha3_256(hash_c, c, 2*LWE_N);  // H(ctxt)
 
+	memcpy(hash_t, delta_kem, size_of_delta);
+	memcpy(hash_t+size_of_delta, hash_c, 32);
 
-
-
-	memcpy(hash_t, c, 2*LWE_N);
-	memcpy(hash_t+2*LWE_N, delta_kem, size_of_delta);
-
-	shake256(shared_k, KK_LEN, hash_t, 2*LWE_N+size_of_delta);
-
+	shake256(shared_k, KK_LEN, hash_t, size_of_delta+32);
+	
 	return 0;
 }
 
@@ -59,22 +62,23 @@ int KEM_dec(unsigned char *shared_k, const unsigned char *c, const unsigned char
 
 	res_dec=Decryption(delta_hat, c, sk_CPA);
 	
-	sha3_256(coin, delta_hat, size_of_delta);
+	unsigned char temp_coin[size_of_delta+32];
+	memcpy(temp_coin, delta_hat, size_of_delta);
+	sha3_256(temp_coin+size_of_delta, pk, PUBLICKEYSIZE);
+	sha3_256(coin, temp_coin, size_of_delta+32);	
 
 	res_enc=Encryption(c_hat, pk, delta_hat, coin);
 	
+	
+	unsigned char hash_c[32];
+	sha3_256(hash_c, c, 2*LWE_N);
 
-	for (i = 0; i < 2*LWE_N; ++i) {
-		if (c[i] != c_hat[i]){
-			memcpy(hash_t, c, 2*LWE_N);
-			memcpy(hash_t+2*LWE_N, u, MESSAGE_LEN);
-			shake256(shared_k, KK_LEN, hash_t, 2*LWE_N+MESSAGE_LEN);
-			return 1;
-		}
-	}
-	memcpy(hash_t, c, 2*LWE_N);
-	memcpy(hash_t+2*LWE_N, delta_hat, size_of_delta);
-	shake256(shared_k, KK_LEN, hash_t, 2*LWE_N+size_of_delta);
+	int8_t selector = ct_verify(c, c_hat, 2*LWE_N);
+    ct_select((unsigned char*)hash_t, (unsigned char*)delta_hat, (unsigned char*)u, size_of_delta, selector);
+
+    memcpy(hash_t+size_of_delta, hash_c, 32);
+	shake256(shared_k, KK_LEN, hash_t, size_of_delta+32);
+
 	return 0;
 }
 
