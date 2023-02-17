@@ -7,6 +7,7 @@
 #include "rng.h"
 #include "fips202.h"
 #include "xef.h"
+#include "util.h"
 
 
 int KEM_Keygen(unsigned char *pk, unsigned char *sk){
@@ -68,28 +69,16 @@ int KEM_dec(unsigned char *shared_k, const unsigned char *c, const unsigned char
 
 	res_enc=Encryption(c_hat, pk, delta_hat, coin);
 	
-
-	for (i = 0; i < 2*LWE_N; ++i) {
-		if (c[i] != c_hat[i]){
-			
-			unsigned char hash_c[32];
-			sha3_256(hash_c, c, 2*LWE_N);
-
-			memcpy(hash_t, u, MESSAGE_LEN);
-			memcpy(hash_t+MESSAGE_LEN, hash_c, 32);
-			shake256(shared_k, KK_LEN, hash_t, MESSAGE_LEN+32);
-			
-			return 1;
-		}
-	}
 	
 	unsigned char hash_c[32];
 	sha3_256(hash_c, c, 2*LWE_N);
 
-	memcpy(hash_t, delta_hat, size_of_delta);
-	memcpy(hash_t+size_of_delta, hash_c, 32);
+	int8_t selector = ct_verify(c, c_hat, 2*LWE_N);
+    ct_select((unsigned char*)hash_t, (unsigned char*)delta_hat, (unsigned char*)u, size_of_delta, selector);
+
+    memcpy(hash_t+size_of_delta, hash_c, 32);
 	shake256(shared_k, KK_LEN, hash_t, size_of_delta+32);
-	
+
 	return 0;
 }
 
