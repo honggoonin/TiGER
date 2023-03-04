@@ -1,0 +1,97 @@
+#include "xe3_91.h"
+#define XM64_RTLM(r, n) { r = ((r << (64 % n)) | (r >> (n - (64 % n)))) & \
+((1llu << n) - 1llu);}
+#define XM64_FLDM(r, n) { r = (r ^ ((r >> n))) & ((1llu << n) - 1llu); }
+#define XM64_FLD2(r, n) { r ^= r >> (2 * n); XM64_FLDM(r, n); }
+#define XM64_GTH4(r) { \
+r ^= r >> 8; \
+r ^= r >> 4; \
+r ^= r >> 2; \
+r ^= r >> 1; \
+r &= 0x0001000100010001llu; \
+r ^= r >> 15; \
+r = (r ^ (r >> 30)) & 0xF; \
+}
+#define XM64_PR16(r) { r ^= r >> 32; r = (r ^ (r >> 16)) & 0xFFFF; }
+#define XM64_UNF4(r, n) { r |= r << (2 * n); XM64_FLDM(r, n); }
+#define XM64_ROTR(r, n) { r = ((r >> (64 % n)) | (r << (n - (64 % n)))); }
+
+// == XE3-91 (64-bit payload) ==
+
+void xe3_91_compute(void *block)
+{
+    uint64_t p16, r16, r17, r19, r21;
+    uint64_t *p64, x;
+
+    // initialize
+    p64 = (uint64_t *) block;
+    p16 = r16 = r17 = r19 = r21 = p64[1];
+    XM64_GTH4(p16);
+
+    // rotate, xor, and fold
+    XM64_ROTR(r17, 17);
+    XM64_ROTR(r19, 19);
+    XM64_ROTR(r21, 21);
+    x = p64[0] ^ p64[1];
+    r16 ^= x;
+    r17 ^= x;
+    r19 ^= x;
+    r21 ^= x;
+    XM64_PR16(r16);
+    XM64_UNF4(r17, 17);
+    XM64_UNF4(r19, 19);
+    XM64_UNF4(r21, 21);
+
+    // XE3-91: p16 r16 r17 r19 r21 end
+    // bit offset: 0 16 32 49 70
+    x = p16 ^ (r16 << 16) ^ (r17 << 32) ^ (r19 << 49);
+    p64[2] ^= x;
+    x = (r19 >> 15) ^ (r21 << 6);
+    p64[3] ^= x;
+}
+
+
+
+
+
+void xe3_91_fixerr(void *block)
+{
+    int i;
+    uint64_t p8, r4, r5, r10, r17, r18, r20;
+    uint64_t *p64, x, y, c, t1, t2;
+
+    // decode
+    p64 = (uint64_t *) block;
+
+    x = p64[1];
+    p8 = x >> 55; r4 = x >> 51; r5 = x >> 44;
+
+    x = p64[2];
+    r5 ^= x << 8; r10 = x >> 55; r17 = x >> 38; r18 = x >> 31;
+
+    x = p64[3];
+    r18 ^= x << 33; r20 = x >> 11;
+
+    // unfold
+    y = p8 & 0x7;
+    XM64_UNG8(y);
+    XM64_UNF2(r4, 4); XM64_UNF2(r5, 5); XM64_UNFM(r10, 10);
+    XM64_UNF4(r17, 17); XM64_UNF4(r18, 18); XM64_UNFM(r20, 20);
+
+    for (i = 0; i < 3; i++) {
+        if (i > 0) {
+            // rotate
+            p8 >>= 3;
+            y = p8 & 0x7;
+            XM64_UNG8(y);
+            XM64_ROTR(r5, 5); XM64_ROTR(r10, 10);
+            XM64_ROTR(r17, 17); XM64_ROTR(r18, 18); XM64_ROTR(r20, 20);
+        }
+
+        // majority
+        MX64_MJ6(c, y, t1, t2, x,
+            y, r4, r5, r10, r17, r18, r20);
+
+        p64[i] ^= x;
+    }
+}
