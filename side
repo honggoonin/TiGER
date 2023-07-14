@@ -1,0 +1,56 @@
+// Declare variables
+unsigned char tmp_s[HS*3];
+uint16_t sk_s[HS];
+unsigned char sk_t[LWE_N];
+unsigned int sk_random_idx;
+int hw = 0, count = 0, neg_start = 0, back_position = HS;
+
+// Initialize sk_t array with zeros
+memset(sk_t, 0, LWE_N);
+
+// Generate tmp_s using shake256 with seed_s and SEED_LEN
+shake256(tmp_s, HS*3, seed_s, SEED_LEN);
+
+unsigned char ts;
+while (hw < HS) {
+    // Extract sk_random_idx from tmp_s
+    sk_random_idx = tmp_s[count++];
+    sk_random_idx <<= 8;
+    sk_random_idx ^= tmp_s[count++];
+
+    // Extract ts from sk_random_idx
+    ts = (sk_random_idx & 0x02) - 1;
+    sk_random_idx >>= 2;
+    sk_random_idx &= (LWE_N - 1);
+
+    // Perform rejection sampling
+    unsigned char is_zero = (sk_t[sk_random_idx] == 0);
+    unsigned char is_one = (sk_t[sk_random_idx] == 1);
+    unsigned char is_ff = (sk_t[sk_random_idx] == 0xFF);
+
+    unsigned char is_rejected = (is_zero | is_one | is_ff);
+    unsigned char is_accepted = (is_rejected ^ 0xFF);
+
+    unsigned char masked_ts = ts & is_accepted;
+
+    sk_t[sk_random_idx] |= masked_ts;
+
+    hw += is_accepted;
+
+    // Handle special cases for sk_t values
+    unsigned char is_one_special = is_one & is_accepted;
+    unsigned char is_ff_special = is_ff & is_accepted;
+
+    sk_s[neg_start] = (sk_random_idx & is_one_special) | (sk_s[neg_start] & ~is_one_special);
+    sk_s[back_position] = (sk_random_idx & is_ff_special) | (sk_s[back_position] & ~is_ff_special);
+
+    neg_start += is_one_special;
+    back_position -= is_ff_special;
+
+    // Regenerate tmp_s if count reaches its limit
+    if (count >= HS*3 - 3) {
+        shake256(tmp_s, HS*3, tmp_s, HS*3);
+        printf("Make the tmp_s. \n");
+        count = 0;
+    }
+}
