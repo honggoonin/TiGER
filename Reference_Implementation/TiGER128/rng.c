@@ -8,9 +8,12 @@ You are solely responsible for determining the appropriateness of using and dist
 
 #include <string.h>
 #include "rng.h"
+/*
 #include <openssl/conf.h>
 #include <openssl/evp.h>
 #include <openssl/err.h>
+*/
+#include "aes.h"
 
 AES256_CTR_DRBG_struct  DRBG_ctx;
 
@@ -105,7 +108,8 @@ seedexpander(AES_XOF_struct *ctx, unsigned char *x, unsigned long xlen)
 
 void handleErrors(void)
 {
-    ERR_print_errors_fp(stderr);
+    //ERR_print_errors_fp(stderr);
+    fprintf(stderr, "Error Detected");
     abort();
 }
 
@@ -116,13 +120,23 @@ void handleErrors(void)
 void
 AES256_ECB(unsigned char *key, unsigned char *ctr, unsigned char *buffer)
 {
+    size_t nblocks;
+    nblocks = 1;
+
+    aes256ctx ctx;
+
+    aes256_ecb_keyexp(&ctx, key);
+    aes256_ecb(buffer, ctr, nblocks, &ctx);
+    aes256_ctx_release(&ctx);
+    
+    /*
     EVP_CIPHER_CTX *ctx;
     
     int len;
     
     int ciphertext_len;
     
-    /* Create and initialise the context */
+    // Create and initialise the context
     if(!(ctx = EVP_CIPHER_CTX_new())) handleErrors();
     
     if(1 != EVP_EncryptInit_ex(ctx, EVP_aes_256_ecb(), NULL, key, NULL))
@@ -132,8 +146,9 @@ AES256_ECB(unsigned char *key, unsigned char *ctr, unsigned char *buffer)
         handleErrors();
     ciphertext_len = len;
     
-    /* Clean up */
+    // Clean up
     EVP_CIPHER_CTX_free(ctx);
+    */
 }
 
 void

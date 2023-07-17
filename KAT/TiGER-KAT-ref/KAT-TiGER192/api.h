@@ -12,9 +12,11 @@ You are solely responsible for determining the appropriateness of using and dist
 #define api_h
 
 #include "params.h"
+
 #include "TiGER_CPAPKE.h"
 #include "TiGER_CCAKEM.h"
 #include "fips202.h"
+#include "params.h"
 
 //  Set these three values apropriately for your algorithm
 #define CRYPTO_SECRETKEYBYTES SECRETKEYSIZE
@@ -22,7 +24,7 @@ You are solely responsible for determining the appropriateness of using and dist
 #define CRYPTO_BYTES MESSAGE_LEN
 #define CRYPTO_CIPHERTEXTBYTES CIPHERTEXTSIZE
 
-#define CRYPTO_ALGNAME PARAMNAME
+#define CRYPTO_ALGNAME "TiGER"
 
 extern unsigned char pk[CRYPTO_PUBLICKEYBYTES];
 extern unsigned char sk[CRYPTO_SECRETKEYBYTES];

@@ -5,8 +5,8 @@ CFLAGS2=-O0
 
 # // [MODIFIED] -lcrypto option is vital for openssl headers (related to rng.h)
 all :
-	$(CC) $(CFLAGS) -c PQCgenKAT_kem.c TiGER_CCAKEM.c TiGER_CPAPKE.c fips202.c xe5.c rng.c kem.c util.c
-	$(CC) $(CFLAGS) -o katkem PQCgenKAT_kem.o  TiGER_CCAKEM.o TiGER_CPAPKE.o fips202.o xe5.o rng.o kem.o util.o -lcrypto
+	$(CC) $(CFLAGS) -c PQCgenKAT_kem.c TiGER_CCAKEM.c TiGER_CPAPKE.c fips202.c xe5.c rng.c kem.c util.c aes.c
+	$(CC) $(CFLAGS) -o katkem PQCgenKAT_kem.o  TiGER_CCAKEM.o TiGER_CPAPKE.o fips202.o xe5.o rng.o kem.o util.o aes.o -lcrypto
 	
 run : all
 	./katkem

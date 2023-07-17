@@ -9,7 +9,6 @@
 #include "xef.h"
 #include "util.h"
 
-
 int KEM_Keygen(unsigned char *pk, unsigned char *sk){
 	int res;
 	unsigned char u[MESSAGE_LEN];
@@ -17,7 +16,7 @@ int KEM_Keygen(unsigned char *pk, unsigned char *sk){
 	res=Keygen(pk, sk);
 
 	randombytes(u, MESSAGE_LEN);
-	memcpy(sk+LWE_N, u, MESSAGE_LEN);
+	memcpy(sk+161, u, MESSAGE_LEN);//***
 	
 	return 0;
 }
@@ -26,19 +25,19 @@ int KEM_Enc(unsigned char *c, unsigned char *shared_k, const unsigned char *pk){
 	int res;
 	unsigned char delta_kem[size_of_delta] = {0, };
 	unsigned char coin[32];
-	unsigned char hash_t[2*LWE_N+size_of_delta];
+	unsigned char hash_t[CIPHERTEXTSIZE+size_of_delta];//***
 
 	randombytes(delta_kem, size_of_delta);
 
 	unsigned char temp_coin[size_of_delta+32];
 	memcpy(temp_coin, delta_kem, size_of_delta);
-	sha3_256(temp_coin+size_of_delta, pk, PUBLICKEYSIZE);  // H function
+	sha3_256(temp_coin+size_of_delta, pk, PUBLICKEYSIZE);  // H function//***
 	sha3_256(coin, temp_coin, size_of_delta+32);		// G function
 
 	res=Encryption(c, pk, delta_kem, coin);
 	
 	unsigned char hash_c[32];
-	sha3_256(hash_c, c, 2*LWE_N);  // H(ctxt)
+	sha3_256(hash_c, c, CIPHERTEXTSIZE);  // H(ctxt)//***
 
 	memcpy(hash_t, delta_kem, size_of_delta);
 	memcpy(hash_t+size_of_delta, hash_c, 32);
@@ -51,29 +50,29 @@ int KEM_Enc(unsigned char *c, unsigned char *shared_k, const unsigned char *pk){
 int KEM_dec(unsigned char *shared_k, const unsigned char *c, const unsigned char *sk, unsigned char *pk){
 	int i, res_enc, res_dec;
 	unsigned char u[MESSAGE_LEN];
-	unsigned char sk_CPA[LWE_N];
+	unsigned char sk_CPA[SECRETKEYSIZE-MESSAGE_LEN];//***
 	unsigned char delta_hat[size_of_delta]={0,};	
-	unsigned char c_hat[2*LWE_N];
+	unsigned char c_hat[CIPHERTEXTSIZE];//***
 	unsigned char coin[32];
-	unsigned char hash_t[2*LWE_N+size_of_delta];
+	unsigned char hash_t[CIPHERTEXTSIZE+size_of_delta];//***
 
-	memcpy(sk_CPA, sk, LWE_N);
-	memcpy(u, sk+LWE_N, MESSAGE_LEN);
+	memcpy(sk_CPA, sk, SECRETKEYSIZE-MESSAGE_LEN);//***
+	memcpy(u, sk+(SECRETKEYSIZE-MESSAGE_LEN), MESSAGE_LEN);//***
 
 	res_dec=Decryption(delta_hat, c, sk_CPA);
 	
 	unsigned char temp_coin[size_of_delta+32];
 	memcpy(temp_coin, delta_hat, size_of_delta);
-	sha3_256(temp_coin+size_of_delta, pk, PUBLICKEYSIZE);
+	sha3_256(temp_coin+size_of_delta, pk, PUBLICKEYSIZE);//***
 	sha3_256(coin, temp_coin, size_of_delta+32);	
 
 	res_enc=Encryption(c_hat, pk, delta_hat, coin);
 	
 	
 	unsigned char hash_c[32];
-	sha3_256(hash_c, c, 2*LWE_N);
+	sha3_256(hash_c, c, CIPHERTEXTSIZE);//***
 
-	int8_t selector = ct_verify(c, c_hat, 2*LWE_N);
+	int8_t selector = ct_verify(c, c_hat, CIPHERTEXTSIZE);//***
     ct_select((unsigned char*)hash_t, (unsigned char*)delta_hat, (unsigned char*)u, size_of_delta, selector);
 
     memcpy(hash_t+size_of_delta, hash_c, 32);

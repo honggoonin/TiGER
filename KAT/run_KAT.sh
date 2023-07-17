@@ -7,6 +7,7 @@ do
     echo KAT ${algname}${param}
     mkdir KAT_VALUES/KEM/${algname}${param}
     cp ../Reference_Implementation/${algname}${param}/*.c ./${algname}-KAT-ref/KAT-${algname}${param}
+    cp ../Reference_Implementation/${algname}${param}/*.h ./${algname}-KAT-ref/KAT-${algname}${param}
 
     cd ${algname}-KAT-ref/KAT-${algname}${param}
     rm *.req *.rsp

@@ -16,6 +16,6 @@
 #define _8_LOG_T 7
 #define sft (sizeof(size_t) * 4 - 1)
 
-#define PUBLICKEYSIZE 32+LWE_N 
-#define SECRETKEYSIZE LWE_N+MESSAGE_LEN 
-#define CIPHERTEXTSIZE LWE_N*2 
+#define PUBLICKEYSIZE 32+(LOG_P*LWE_N/8) //***
+#define SECRETKEYSIZE 161+MESSAGE_LEN //*** 161 = LOG_N*HS/8 + 1(neg_start)
+#define CIPHERTEXTSIZE (LOG_K_1*LWE_N/8) + (LOG_K_2*LWE_N/8) //***
