@@ -10,7 +10,7 @@
 #define HS 104			// Hamming weight of coefficient vector s
 #define HE 32
 #define SEED_LEN 32
-#define KK_LEN 16
+#define KK_LEN 32
 #define size_of_delta 16
 #define MESSAGE_LEN 16
 #define _8_LOG_T 7
