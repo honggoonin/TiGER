@@ -13,6 +13,7 @@ run : all
 clean :
 	rm -f *.o
 	rm -f test_CCAKEM
+	rm PQC_bench
 
 new :
 	make clean
@@ -24,7 +25,7 @@ PQC_bench: ./PQC_bench.c
 	./PQC_bench
 
 Module_bench: ./Module_bench.c
-	$(CC) -O3 -fomit-frame-pointer -msse2avx -mavx2 -march=native -std=c99 -o $@ ./Module_bench.c TiGER_CCAKEM.c TiGER_CPAPKE.c fips202.c xef_ref.c rng.c aes.c util.c $(LDFLAGS)
+	$(CC) -O2 -fomit-frame-pointer -msse2avx -mavx2 -march=native -std=c99 -o $@ ./Module_bench.c TiGER_CCAKEM.c TiGER_CPAPKE.c fips202.c xef_ref.c rng.c aes.c util.c $(LDFLAGS)
 	./Module_bench
 
 clean_bench:

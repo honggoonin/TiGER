@@ -19,3 +19,5 @@ void compress6to8(unsigned char* t, unsigned char* s);
 void recover8to6(unsigned char* t, const unsigned char* s);
 void compress4to8(unsigned char* t, unsigned char* s);
 void recover8to4(unsigned char* t, const unsigned char* s);
+void compress3to8(unsigned char* t, unsigned char* s);
+void recover8to3(unsigned char* t, const unsigned char* s);

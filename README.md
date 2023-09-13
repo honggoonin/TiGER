@@ -21,6 +21,9 @@ In particular, ```run_KAT.sh``` repeats and updates KAT values based on latest r
    - Removed conditional statements from the HWT function (rejection sampling) to be executed in constant time.
    - Complemented the problem that the mask variable of D2 encoding is vulnerable to power analysis due to the Hamming weight difference (0 or -1).
 
+09/11/23 v3.0 Update
+- Corrected error in the decryption failure probability calculation formula. (Change the parameters accordingly)
+- Changed the shared key (K) size in TiGER128 from 128 bits to 256 bits for security strength. (Influenced by recently released FIPS-203(draft))
 
 ## Citation
 If your research employs our __TiGER__ scheme, please cite the following paper (https://eprint.iacr.org/2022/1651):

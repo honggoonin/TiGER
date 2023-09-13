@@ -13,6 +13,7 @@ run : all
 clean :
 	rm -f *.o
 	rm -f test_CCAKEM
+	rm PQC_bench
 
 new :
 	make clean

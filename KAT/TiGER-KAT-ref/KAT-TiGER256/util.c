@@ -72,3 +72,20 @@ void recover8to2(unsigned char* t, const unsigned char* s){
    t[2] = (s[0] & 0x0C) << 4;
    t[3] = (s[0] & 0x03) << 6;
 }
+
+void compress3to8(unsigned char* s, unsigned char* t){
+	s[0] = (t[0] & 0xE0) | (t[1] >> 3) | (t[2] >> 6);
+	s[1] = ((t[2] << 2) & 0x80) | (t[3] >> 1) | (t[4] >> 4) | (t[5] >> 7);
+	s[2] = ((t[5] << 1) & 0xC0) | (t[6] >> 2) | (t[7] >> 5);
+}
+
+void recover8to3(unsigned char* t, const unsigned char* s){
+	t[0] = s[0]&0xE0;
+	t[1] = (s[0]<<3)&0xE0;
+	t[2] = ((s[0]<<6)&0xC0) | ((s[1]&0x80)>>2);
+	t[3] = (s[1]<<1)&0xE0;
+	t[4] = (s[1]<<4)&0xE0;
+	t[5] = ((s[1]<<7)&0x80) | ((s[2]&0xC0)>>1);
+	t[6] = (s[2]<<2)&0xE0;
+	t[7] = (s[2]<<5)&0xE0;
+}

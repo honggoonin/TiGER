@@ -69,17 +69,10 @@ int Keygen(unsigned char *pk, unsigned char *sk){
 		}
 	}
 	// compress uint16_t*HS bit => LOG_N*HS bit.
-    for (i=0; i< (int)(160 / 9); i++){
+    for (i=0; i< (int)(117 / 9); i++){
         compress9to8(&sk_s[8*i], &sk[9*i]);
     }
-    sk[153] = (sk_s[136] >> 1) & 0xFF;
-    sk[154] = ((sk_s[136] & 0x01) << 7) | ((sk_s[137] >> 2) & 0x7F);
-    sk[155] = ((sk_s[137] & 0x03) << 6) | ((sk_s[138] >> 3) & 0x3F);
-    sk[156] = ((sk_s[138] & 0x07) << 5) | ((sk_s[139] >> 4) & 0x1F);
-    sk[157] = ((sk_s[139] & 0x0F) << 4) | ((sk_s[140] >> 5) & 0x0F);
-    sk[158] = ((sk_s[140] & 0x1F) << 3) | ((sk_s[141] >> 6) & 0x07);
-    sk[159] = ((sk_s[141] & 0x3F) << 2) ;
-    sk[160] = neg_start;
+    sk[117] = neg_start;
 
 	
 //// Step4 : Gen poly_b := (p/q)*a*s ; p=128 ////
@@ -104,7 +97,9 @@ int Keygen(unsigned char *pk, unsigned char *sk){
 //// Step5 : Concat seed_genA || pk_b ////
 	memcpy(pk, seed_a, SEED_LEN);
 	// compress unsigned char * LWE_N bit => LOG_P * LWE_N bit
-	for (i = 0; i < LWE_N/8; i++) {compress7to8(&pk[SEED_LEN+LOG_P*i], &pk_b[8*i]);}
+	for (i = 0; i < LWE_N/8; i++) {
+		compress7to8(&pk[SEED_LEN+LOG_P*i], &pk_b[8*i]);
+	}
 
 	return 0;
 }
@@ -281,15 +276,15 @@ int Encryption(unsigned char *c, const unsigned char *pk, unsigned char *Message
 	}
 	
 	
-// (3) Send c1h_a and c1h_b from mod q to mod k1(64) and mod k2(16).
+// (3) Send c1h_a and c1h_b from mod q to mod k1(128) and mod k2(8).
 	unsigned char c_t[LWE_N*2];
 	for (i=0; i< LWE_N; ++i) {
-		c_t[i] = ((c1[i] + 0x02) & 0xfc);
-		c_t[LWE_N + i] = ((c2[i] + 0x08) & 0xf0);// 4=0x20/0xc0 8=0x10/0xe0, 16=0x08/0xf0, 32=0x04/0xf8 64=0x02/0xfc, 128= 0x01 0xfe
+		c_t[i] = ((c1[i] + 0x01) & 0xfe);
+		c_t[LWE_N + i] = ((c2[i] + 0x10) & 0xe0);// 4=0x20/0xc0 8=0x10/0xe0, 16=0x08/0xf0, 32=0x04/0xf8 64=0x02/0xfc, 128= 0x01 0xfe
 	}
 	// compress unsigned char*LWE_N*2 bit => LOG_K_1*LWE_N + LOG_K_2*LWE_N bit
-    for (i=0; i< LWE_N/4; i++){compress6to8(&c[3*i], &c_t[4*i]);}
-	for (i=0; i< LWE_N/2; i++){compress4to8(&c[(LOG_K_1*LWE_N/8)+i], &c_t[LWE_N+2*i]);    }
+    for (i=0; i< LWE_N/8; i++){compress7to8(&c[LOG_K_1*i], &c_t[8*i]);}
+	for (i=0; i< LWE_N/8; i++){compress3to8(&c[(LOG_K_1*LWE_N/8)+3*i], &c_t[LWE_N+8*i]);    }
 
 	return 0;
 }
@@ -303,25 +298,19 @@ int Decryption(unsigned char *Message, const unsigned char *c, const unsigned ch
 
 //// Step1 : (1) Parsing c and (2) Gen poly s. ////
 	// recover LOG_K_1*LWE_N + LOG_K_2*LWE_N bit =>unsigned char*LWE_N*2 bit
-    for (i=0; i< LWE_N/4; i++){
-        recover8to6(&c1_hat[4*i], &c[3*i]);
+    for (i=0; i< LWE_N/8; i++){
+        recover8to7(&c1_hat[8*i], &c[7*i]);
     }
-    for (i=0; i< LWE_N/2; i++){
-        recover8to4(&decomp_delta[2*i], &c[(LOG_K_1*LWE_N/8)+i]);
+    for (i=0; i< LWE_N/8; i++){
+        recover8to3(&decomp_delta[8*i], &c[(LOG_K_1*LWE_N/8)+3*i]);
     }
 	
 // (2) Gen s_idx
 	uint16_t sk_s[HS]={0,};
-    for (i=0; i< (int)(160 / 9); i++){
+    for (i=0; i< (int)(117 / 9); i++){
         recover8to9(&sk_s[8*i], &sk[9*i]);
     }
-    sk_s[136] = ((sk[153] & 0xFF) << 1) | ((sk[154] >> 7) & 0x01);
-    sk_s[137] = ((sk[154] & 0x7F) << 2) | ((sk[155] >> 6) & 0x03);
-    sk_s[138] = ((sk[155] & 0x3F) << 3) | ((sk[156] >> 5) & 0x07);
-    sk_s[139] = ((sk[156] & 0x1F) << 4) | ((sk[157] >> 4) & 0x0F);
-    sk_s[140] = ((sk[157] & 0x0F) << 5) | ((sk[158] >> 3) & 0x1F);
-    sk_s[141] = ((sk[158] & 0x07) << 6) | ((sk[159] >> 2) & 0x3F);
-	int neg_start = sk[160];
+	int neg_start = sk[117];
 
 	// Step2 : Compute Message_hat_prime = c2 - c1 * s.
 	for(i = 0; i < HS; ++i){

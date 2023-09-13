@@ -69,10 +69,10 @@ int Keygen(unsigned char *pk, unsigned char *sk){
 		}
 	}
 	// compress uint16_t*HS bit => LOG_N*HS bit.
-    for (i=0; i< (int)(165 / 5); i++){
+    for (i=0; i< (int)(145 / 5); i++){
         compress10to8(&sk_s[4*i], &sk[5*i]);
     }
-    sk[165] = neg_start;
+    sk[145] = neg_start;
 
 
 //// Step4 : Gen poly_b := (p/q)*a*s ; p=128 ////
@@ -272,15 +272,15 @@ int Encryption(unsigned char *c, const unsigned char *pk, unsigned char *Message
 		c1[j] -= c1[LWE_N+j];
 		c2[j] -= c2[LWE_N+j];
 	}
-// (3) Send c1h_a and c1h_b from mod q to mod k1(64) and mod k2(4).
+// (3) Send c1h_a and c1h_b from mod q to mod k1(128) and mod k2(8).
 	unsigned char c_t[LWE_N*2]; 
 	for (i=0; i< LWE_N; ++i) {
-		c_t[i] = ((c1[i] + 0x02) & 0xfc); 
-		c_t[LWE_N + i] = ((c2[i] + 0x20) & 0xc0); // 4=0x20/0xc0 8=0x10/0xe0, 16=0x08/0xf0, 32=0x04/0xf8 64=0x02/0xfc, 128= 0x01 0xfe
+		c_t[i] = ((c1[i] + 0x01) & 0xfe); 
+		c_t[LWE_N + i] = ((c2[i] + 0x10) & 0xe0); // 4=0x20/0xc0 8=0x10/0xe0, 16=0x08/0xf0, 32=0x04/0xf8 64=0x02/0xfc, 128= 0x01 0xfe
 	}
 	// compress unsigned char*LWE_N*2 bit => LOG_K_1*LWE_N + LOG_K_2*LWE_N bit
-    for (i=0; i< LWE_N/4; i++){compress6to8(&c[3*i], &c_t[4*i]);}
-    for (i=0; i< 512/2; i++){compress2to8(&c[(LOG_K_1*LWE_N/8)+i], &c_t[LWE_N+4*i]);}
+    for (i=0; i< LWE_N/8; i++){compress7to8(&c[LOG_K_1*i], &c_t[8*i]);}
+	for (i=0; i< LWE_N/8; i++){compress3to8(&c[(LOG_K_1*LWE_N/8)+3*i], &c_t[LWE_N+8*i]);    }
 
 	return 0;
 }
@@ -295,15 +295,19 @@ int Decryption(unsigned char *Message, const unsigned char *c, const unsigned ch
 
 //// Step1 : (1) Parsing c and (2) Gen poly s. ////
 // (1) Parsing c. where, decomp_delta = c2_hat.
-    for (i=0; i< LWE_N/4; i++){recover8to6(&c1_hat[4*i], &c[3*i]);}
-	for (i=0; i< LWE_N/4; i++){recover8to2(&decomp_delta[4*i], &c[(LOG_K_1*LWE_N/8)+i]);}
+    for (i=0; i< LWE_N/8; i++){
+        recover8to7(&c1_hat[8*i], &c[7*i]);
+    }
+    for (i=0; i< LWE_N/8; i++){
+        recover8to3(&decomp_delta[8*i], &c[(LOG_K_1*LWE_N/8)+3*i]);
+    }
 
 // (2) Gen s_idx
 	uint16_t sk_s[HS]={0,};
-	for (i=0; i< (int)(165/5); i++){
+	for (i=0; i< (int)(145/5); i++){
         recover8to10(&sk_s[4*i], &sk[5*i]);
     }
-   	int neg_start = sk[165];
+   	int neg_start = sk[145];
 
 //// Step2 : Compute Message_hat_prime = c2 - c1 * s. ////
 	for(i = 0; i < HS; ++i){

@@ -16,7 +16,7 @@ int KEM_Keygen(unsigned char *pk, unsigned char *sk){
 	res=Keygen(pk, sk);
 
 	randombytes(u, MESSAGE_LEN);
-	memcpy(sk+161, u, MESSAGE_LEN);//***
+	memcpy(sk+118, u, MESSAGE_LEN);//***
 	
 	return 0;
 }
