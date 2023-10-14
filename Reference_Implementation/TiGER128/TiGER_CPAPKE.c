@@ -11,16 +11,15 @@
 int Keygen(unsigned char *pk, unsigned char *sk){
 	unsigned char pk_a[LWE_N];
 	unsigned char pk_b[LWE_N*2]={0,};
-	unsigned char seed_a[SEED_LEN], seed_s[SEED_LEN];
+	unsigned char seed[SEED_LEN*2];
 	int i, j;
 
 //// Step1 : Gen Seed_a and Seed_s using PRG(randombytes) ////
-	randombytes(seed_a, SEED_LEN);
-	randombytes(seed_s, SEED_LEN);
+	randombytes(seed, SEED_LEN*2);
 
 
 //// Step2 : Gen poly a using Expender(SHAKE256) //// 
-	shake256(pk_a, LWE_N, seed_a, SEED_LEN);
+	shake256(pk_a, LWE_N, seed, SEED_LEN);
 
 
 //// Step3 : Gens poly s and s_idx. s_idx is a index in -1 or 1 ////
@@ -34,7 +33,7 @@ int Keygen(unsigned char *pk, unsigned char *sk){
 	memset(sk_t, 0, LWE_N);
 
 	// Create temporary array with specific seed
-	shake256(tmp_s, HS * 3, seed_s, SEED_LEN);
+	shake256(tmp_s, HS * 3, seed+SEED_LEN, SEED_LEN);
 	unsigned char ts;
 
 	while (hw < HS) {
@@ -95,7 +94,7 @@ int Keygen(unsigned char *pk, unsigned char *sk){
 
 
 //// Step5 : Concat seed_genA || pk_b ////
-	memcpy(pk, seed_a, SEED_LEN);
+	memcpy(pk, seed, SEED_LEN);
 	// compress unsigned char * LWE_N bit => LOG_P * LWE_N bit
 	for (i = 0; i < LWE_N/8; i++) {
 		compress7to8(&pk[SEED_LEN+LOG_P*i], &pk_b[8*i]);
